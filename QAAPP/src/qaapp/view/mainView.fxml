@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import org.controlsfx.control.RangeSlider?>
+
+<VBox xmlns="http://javafx.com/javafx/8.0.121" xmlns:fx="http://javafx.com/fxml/1" fx:controller="qaapp.view.controller.MainViewController">
+  <children>
+    <MenuBar VBox.vgrow="NEVER">
+      <menus>
+        <Menu mnemonicParsing="false" text="Datei">
+          <items>
+            <MenuItem mnemonicParsing="false" text="Öffnen" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" text="Beenden" />
+          </items>
+        </Menu>
+        <Menu mnemonicParsing="false" text="Bearbeiten">
+          <items>
+            <MenuItem mnemonicParsing="false" text="Undo" />
+            <MenuItem mnemonicParsing="false" text="Redo" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" text="Cut" />
+            <MenuItem mnemonicParsing="false" text="Copy" />
+            <MenuItem mnemonicParsing="false" text="Paste" />
+            <MenuItem mnemonicParsing="false" text="Delete" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" text="Select All" />
+            <MenuItem mnemonicParsing="false" text="Unselect All" />
+          </items>
+        </Menu>
+        <Menu mnemonicParsing="false" text="?">
+          <items>
+            <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
+          </items>
+        </Menu>
+      </menus>
+    </MenuBar>
+      <BorderPane VBox.vgrow="ALWAYS">
+         <top>
+            <FlowPane BorderPane.alignment="CENTER">
+               <children>
+                  <Button fx:id="loadImages" mnemonicParsing="false" onAction="#loadImage" text="Öffne Bild(er)" />
+               </children>
+            </FlowPane>
+         </top>
+         <left>
+            <AnchorPane>
+               <children>
+                  <ListView fx:id="listImages" prefHeight="768.0" prefWidth="200.0" BorderPane.alignment="CENTER" />
+               </children>
+            </AnchorPane>
+         </left>
+         <center>
+            <FlowPane prefHeight="200.0" prefWidth="200.0" BorderPane.alignment="TOP_LEFT">
+               <children>
+                  <ImageView fx:id="viewImage" fitHeight="768.0" fitWidth="1024.0" pickOnBounds="true" preserveRatio="true" />
+                  <HBox prefHeight="17.0" prefWidth="1024.0">
+                     <children>
+                        <RangeSlider fx:id="windowing" disable="true" highValue="750.0" highValueChanging="true" lowValue="-500.0" lowValueChanging="true" max="1000.0" min="-1000.0" prefHeight="14.0" prefWidth="1024.0" />
+                     </children>
+                  </HBox>
+               </children>
+            </FlowPane>
+         </center>
+      </BorderPane>
+  </children>
+</VBox>
