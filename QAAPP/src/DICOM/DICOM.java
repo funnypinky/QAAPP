@@ -5,21 +5,18 @@
  */
 package DICOM;
 
+import RawDCMLibary.DICOM.DICOMFile;
+import RawDCMLibary.model.FileDicomTagTable;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
 import java.io.File;
 import java.io.IOException;
-import static java.lang.Double.NaN;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReadParam;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
-import org.dcm4che3.data.Attributes;
-import org.dcm4che3.data.Tag;
-import org.dcm4che3.image.BufferedImageUtils;
-import org.dcm4che3.imageio.plugins.dcm.DicomImageReadParam;
-import org.dcm4che3.io.DicomInputStream;
-import org.dcm4che3.util.SafeClose;
+import java.util.ArrayList;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
 
 /**
  *
@@ -27,6 +24,7 @@ import org.dcm4che3.util.SafeClose;
  */
 public class DICOM {
 
+    private StringProperty name = new SimpleStringProperty();
     private int frame = 1;
     private int windowIndex;
     private int voiLUTIndex;
@@ -36,15 +34,17 @@ public class DICOM {
     private double windowWidth;
     private double windowDefaultWidth;
     private boolean autoWindowing = false;
-    private Attributes prState;
-    private final ImageReader imageReader
-            = ImageIO.getImageReadersByFormatName("DICOM").next();
     private int overlayActivationMask = 0xffff;
     private int overlayGrayscaleValue = 0xffff;
+    private ArrayList<String> details = new ArrayList();
 
     private File dicomFile;
 
-    private Attributes attributes;
+    private DICOMFile rf;
+
+    private FileDicomTagTable tagTable;
+    private double rescaleInterecpt;
+    private double rescaleSlope;
 
     public DICOM(File dicomFile) {
         this.dicomFile = dicomFile;
@@ -54,58 +54,39 @@ public class DICOM {
 
     }
 
-    public Attributes loadDicomObject(File f) throws IOException {
+    public FileDicomTagTable loadDicomObject(File f) throws IOException {
         if (f != null) {
             this.dicomFile = f;
-            DicomInputStream dis = new DicomInputStream(f);
-            try {
-                this.attributes = dis.readDataset(-1, -1);
-                this.windowDefaultWidth = attributes.getDouble(Tag.WindowWidth, 2500);
-                this.windowWidth = this.windowDefaultWidth;
-                this.windowDefaultCenter = attributes.getDouble(Tag.WindowCenter, 1250);
-                this.windowCenter = this.windowDefaultCenter;
-                return this.attributes;
-            } finally {
-                SafeClose.close(dis);
-            }
+            DICOMFile rf = new DICOMFile(f.getAbsolutePath());
+            this.rf = rf;
+            this.rf.readHeader();
+            this.tagTable = this.rf.getTagTable();
+            this.windowDefaultWidth = Short.valueOf(this.tagTable.getValue("0028,1051") != null ? this.tagTable.getValue("0028,1051").toString() : "0");
+            this.windowWidth = this.windowDefaultWidth;
+            this.windowDefaultCenter = Short.valueOf(this.tagTable.getValue("0028,1050") != null ? this.tagTable.getValue("0028,1050").toString() : "0");
+            this.windowCenter = this.windowDefaultCenter;
+            this.rescaleInterecpt = Double.parseDouble(this.tagTable.getValue("0028,1052").toString());
+            this.rescaleSlope = Double.parseDouble(this.tagTable.getValue("0028,1053").toString());
+            details.add("Bildname: " + this.tagTable.getValue("3002,0002"));
+            details.add("SID: " + this.tagTable.getValue("3002,0026"));
+            this.name.set(this.tagTable.getValue("3002,0002").toString());
+            return this.tagTable;
+
         } else {
             return null;
         }
     }
 
     public int[] getPixelData() {
-        return this.attributes.getInts(Tag.PixelData);
-    }
-    public BufferedImage getBufferedImage() throws IOException {
-        ImageInputStream iis = ImageIO.createImageInputStream(this.dicomFile);
-        BufferedImage bi = readImage(iis);
-        bi = convert(bi);
-        return bi;
+        return this.rf.getPixelData();
     }
 
-    private BufferedImage convert(BufferedImage bi) {
-        ColorModel cm = bi.getColorModel();
-        return cm.getNumComponents() == 3 ? BufferedImageUtils.convertToIntRGB(bi) : bi;
+    public Image getImage() {
+        return SwingFXUtils.toFXImage(rf.getBufferedImage((int)this.windowCenter, (int)this.windowWidth),null);
     }
 
-    private BufferedImage readImage(ImageInputStream iis) throws IOException {
-        imageReader.setInput(iis);
-        return imageReader.read(frame - 1, readParam());
-    }
-
-    private ImageReadParam readParam() {
-        DicomImageReadParam param
-                = (DicomImageReadParam) imageReader.getDefaultReadParam();
-        param.setWindowCenter((float) (windowCenter != NaN ? windowCenter : windowDefaultCenter));
-        param.setWindowWidth((float) (windowWidth != NaN ? windowWidth : windowDefaultWidth));
-        param.setAutoWindowing(autoWindowing);
-        param.setWindowIndex(windowIndex);
-        param.setVOILUTIndex(voiLUTIndex);
-        param.setPreferWindow(preferWindow);
-        param.setPresentationState(prState);
-        param.setOverlayActivationMask(overlayActivationMask);
-        param.setOverlayGrayscaleValue(overlayGrayscaleValue);
-        return param;
+    public BufferedImage getDefaultBufferedImage() throws IOException {
+        return rf.getDefaultBufferedImage();
     }
 
     public double getWindowWidth() {
@@ -113,16 +94,21 @@ public class DICOM {
     }
 
     public double getMaxWindowWidth() {
-        return Math.pow(2, Float.parseFloat(this.attributes.getString(Tag.BitsStored)));
+        return Math.pow(2, Double.parseDouble(this.tagTable.getValue("0028,0101").toString()));
     }
 
     public void setWindowWidth(double windowWidth) {
         this.windowWidth = windowWidth;
     }
 
+    public StringProperty nameProperty() {
+
+        return this.name;
+    }
+
     @Override
     public String toString() {
-        return this.attributes.getString(Tag.RTImageLabel);
+        return this.name.get();
     }
 
     /**
@@ -180,7 +166,7 @@ public class DICOM {
      * @return pixel
      */
     public double huToPx(double HU) {
-        return (HU - this.attributes.getDouble(Tag.RescaleIntercept, 1)) / this.attributes.getDouble(Tag.RescaleSlope, 1);
+        return HU - rescaleInterecpt / rescaleSlope;
     }
 
     /**
@@ -190,17 +176,17 @@ public class DICOM {
      * @return HU - Hounsfield unit
      */
     public double pxToHu(double pixel) {
-        return (this.attributes.getDouble(Tag.RescaleSlope, 1) * pixel + this.attributes.getDouble(Tag.RescaleIntercept, 1));
+        return (this.rescaleSlope * pixel + this.rescaleInterecpt);
     }
-    
-    public double getMinHU(){
-        return pxToHu(min(this.attributes.getInts(Tag.PixelData)));
+
+    public double getMinHU() {
+        return pxToHu(min(this.getPixelData()));
     }
-    
-    public double getMaxHU(){
-        return pxToHu(max(this.attributes.getInts(Tag.PixelData)));
+
+    public double getMaxHU() {
+        return pxToHu(max(this.getPixelData()));
     }
-    
+
     public double getWindowCenter() {
         return this.windowCenter;
     }
@@ -208,5 +194,23 @@ public class DICOM {
     public void setWindowCenter(double windowCenter) {
         this.windowCenter = windowCenter;
     }
-}
 
+    public int getImageHeight() {
+        return Integer.parseInt(this.tagTable.getValue("0028,0010").toString());
+    }
+
+    public int getImageWidth() {
+        return Integer.parseInt(this.tagTable.getValue("0028,0011").toString());
+    }
+
+    public ObservableList<String> getDetails() {
+        return FXCollections.observableArrayList(details);
+    }
+
+    public FileDicomTagTable getTagTable() {
+        return tagTable;
+    }
+    public double getSID(){
+        return Double.parseDouble(this.tagTable.getValue("3002,0026").toString());
+    }
+}

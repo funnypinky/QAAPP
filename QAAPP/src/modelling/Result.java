@@ -5,10 +5,20 @@
  */
 package modelling;
 
+import java.util.HashMap;
+
 /**
  *
  * @author shaesler
  */
 public abstract class Result {
+    private HashMap<String,Object> details = new HashMap<>();
     
+    public HashMap<String, Object> getDetails() {
+        return details;
+    }
+
+    public void setDetails(HashMap<String, Object> details) {
+        this.details = details;
+    }
 }

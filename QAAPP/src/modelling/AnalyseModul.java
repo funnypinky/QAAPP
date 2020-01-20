@@ -5,15 +5,29 @@
  */
 package modelling;
 
+import java.util.concurrent.Callable;
+
 /**
  *
  * @author shaesler
+ * @param <T>
  */
-public abstract class AnalyseModul {
+public abstract class AnalyseModul<T extends Result> implements Callable<T>{
 
     private String name;
 
-    public abstract Result analyse();
     
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+  
+    @Override
+    public abstract T call();
     
 }

@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Threads;
+package qaapp.Threads;
 
 
 import DICOM.DICOM;
@@ -37,6 +37,7 @@ public class LoadImage extends Service<ObservableList<DICOM>> {
                     File selectedFile = files.get(i);
                     updateProgress(i, size);
                     DICOM dcmTemp = new DICOM();
+                    
                     dcmTemp.loadDicomObject(selectedFile);
                     dicoms.add(dcmTemp);
                 }
