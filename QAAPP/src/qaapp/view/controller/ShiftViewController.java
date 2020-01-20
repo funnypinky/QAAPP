@@ -25,6 +25,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Slider;
@@ -91,6 +92,9 @@ public class ShiftViewController implements Initializable {
     @FXML
     private ToggleButton thresholdBT;
     private EpidShiftResult reference;
+    
+    @FXML
+    private Button analyseBt;
 
     public ShiftViewController(DataBean bean) {
         this.bean = bean;
@@ -146,7 +150,6 @@ public class ShiftViewController implements Initializable {
                 } catch (IOException ex) {
                     Logger.getLogger(MainViewController.class.getName()).log(Level.SEVERE, null, ex);
                 }
-
                 break;
                 case CANNY:
                     tempImage = listOfResults.get(item).getCannyImage();
@@ -166,7 +169,8 @@ public class ShiftViewController implements Initializable {
         return group.getToggles().stream().anyMatch((toggle) -> (toggle.isSelected()));
     }
 
-    private void process() {
+    @FXML
+    public void process() {
         bean.getImages().forEach((item) -> {
             EpidShiftAnalyse analyseItem = new EpidShiftAnalyse(item);
             listOfResults.put(item, analyseItem.call());

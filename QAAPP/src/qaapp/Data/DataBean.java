@@ -75,5 +75,9 @@ public class DataBean {
     public void setPrimaryStage(Stage primaryStage) {
         this.primaryStage = primaryStage;
     }
+
+    public PropertyChangeSupport getChanges() {
+        return changes;
+    }
     
 }
